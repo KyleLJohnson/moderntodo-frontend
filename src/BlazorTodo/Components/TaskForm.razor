@@ -1,0 +1,96 @@
+@using BlazorTodo.Models
+
+<div class="drawer-overlay @(IsOpen ? "open" : "")" @onclick="HandleOverlayClick"></div>
+
+<div class="drawer @(IsOpen ? "open" : "")">
+    <div class="drawer-header">
+        <h2>@(IsEdit ? "Edit Task" : "New Task")</h2>
+        <button class="icon-btn" @onclick="HandleCancel" title="Close">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
+        </button>
+    </div>
+
+    <div class="drawer-body">
+        <EditForm Model="_model" OnValidSubmit="HandleSubmit">
+            <DataAnnotationsValidator />
+
+            <div class="form-group">
+                <label for="title">Title <span class="required">*</span></label>
+                <InputText id="title" class="form-input" @bind-Value="_model.Title" placeholder="What needs to be done?" />
+                <ValidationMessage For="() => _model.Title" />
+            </div>
+
+            <div class="form-group">
+                <label for="description">Description</label>
+                <InputTextArea id="description" class="form-input" @bind-Value="_model.Description"
+                               rows="3" placeholder="Add more details..." />
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="due">Due Date</label>
+                    <InputDate id="due" class="form-input" @bind-Value="_model.DueDate" />
+                </div>
+                <div class="form-group">
+                    <label for="priority">Priority</label>
+                    <InputSelect id="priority" class="form-input" @bind-Value="_model.Priority">
+                        @foreach (var p in Enum.GetValues<Priority>())
+                        {
+                            <option value="@p">@p</option>
+                        }
+                    </InputSelect>
+                </div>
+            </div>
+
+            <div class="drawer-footer">
+                <button type="button" class="btn btn-ghost" @onclick="HandleCancel">Cancel</button>
+                <button type="submit" class="btn btn-primary">
+                    @(IsEdit ? "Save Changes" : "Add Task")
+                </button>
+            </div>
+        </EditForm>
+    </div>
+</div>
+
+@code {
+    [Parameter] public bool IsOpen { get; set; }
+    [Parameter] public TaskDto? EditTask { get; set; }
+    [Parameter] public EventCallback<TaskDto> OnSave { get; set; }
+    [Parameter] public EventCallback OnCancel { get; set; }
+
+    private TaskDto _model = new();
+    private bool IsEdit => EditTask is not null;
+
+    protected override void OnParametersSet()
+    {
+        if (EditTask is not null)
+            _model = new TaskDto
+            {
+                Id = EditTask.Id,
+                Title = EditTask.Title,
+                Description = EditTask.Description,
+                DueDate = EditTask.DueDate,
+                Priority = EditTask.Priority,
+                IsCompleted = EditTask.IsCompleted,
+                CreatedAt = EditTask.CreatedAt
+            };
+        else if (!IsOpen)
+            _model = new TaskDto { Priority = Priority.Medium };
+    }
+
+    private async Task HandleSubmit()
+    {
+        await OnSave.InvokeAsync(_model);
+        _model = new TaskDto { Priority = Priority.Medium };
+    }
+
+    private async Task HandleCancel()
+    {
+        _model = new TaskDto { Priority = Priority.Medium };
+        await OnCancel.InvokeAsync();
+    }
+
+    private async Task HandleOverlayClick() => await HandleCancel();
+}

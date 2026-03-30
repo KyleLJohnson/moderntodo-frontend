@@ -1,0 +1,22 @@
+# Build outputs
+bin/
+obj/
+
+# Azure Developer CLI
+.azure/
+
+# User-specific files
+*.user
+*.suo
+.vs/
+
+# NuGet
+*.nupkg
+packages/
+
+# Rider
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db

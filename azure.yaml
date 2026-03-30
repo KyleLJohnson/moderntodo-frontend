@@ -1,0 +1,15 @@
+name: moderntodo-frontend
+metadata:
+  template: moderntodo-frontend@0.0.1
+
+services:
+  web:
+    project: ./src/BlazorTodo
+    language: csharp
+    host: staticwebapp
+    dist: bin/Release/net10.0/publish/wwwroot
+
+infra:
+  provider: bicep
+  path: ./infra
+  module: main

@@ -1,0 +1,212 @@
+﻿@page "/"
+@using BlazorTodo.Models
+@using BlazorTodo.Services
+@using BlazorTodo.Components
+@inject TaskApiService Api
+
+<PageTitle>Tasks</PageTitle>
+
+<div class="page-header">
+    <div class="page-header-inner">
+        <h1>My Tasks</h1>
+        <button class="btn btn-primary" @onclick="OpenCreateForm">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16">
+                <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
+            </svg>
+            New Task
+        </button>
+    </div>
+</div>
+
+<div class="content-area">
+    <div class="filter-bar">
+        @foreach (var filter in _filters)
+        {
+            <button class="filter-tab @(_activeFilter == filter.Key ? "active" : "")"
+                    @onclick="() => SetFilter(filter.Key)">
+                @filter.Label
+                <span class="filter-count">@filter.Count</span>
+            </button>
+        }
+    </div>
+
+    @if (_loading)
+    {
+        <div class="state-box">
+            <div class="spinner"></div>
+            <p>Loading tasks…</p>
+        </div>
+    }
+    else if (_error is not null)
+    {
+        <div class="state-box error">
+            <p>@_error</p>
+            <button class="btn btn-ghost" @onclick="LoadTasks">Retry</button>
+        </div>
+    }
+    else if (FilteredTasks.Count == 0)
+    {
+        <div class="state-box">
+            @if (_activeFilter == "all" && _tasks.Count == 0)
+            {
+                <div class="empty-icon">✓</div>
+                <p class="empty-title">No tasks yet</p>
+                <p class="empty-sub">Click <strong>New Task</strong> to get started</p>
+            }
+            else
+            {
+                <p>No tasks match this filter.</p>
+            }
+        </div>
+    }
+    else
+    {
+        <div class="task-list">
+            @foreach (var task in FilteredTasks)
+            {
+                <TaskCard Task="task"
+                          OnEdit="OpenEditForm"
+                          OnToggleComplete="ToggleComplete"
+                          OnDelete="DeleteTask" />
+            }
+        </div>
+    }
+</div>
+
+<TaskForm IsOpen="_formOpen"
+          EditTask="_editTask"
+          OnSave="SaveTask"
+          OnCancel="CloseForm" />
+
+@code {
+    private List<TaskDto> _tasks = [];
+    private string _activeFilter = "all";
+    private bool _loading = true;
+    private string? _error;
+    private bool _formOpen;
+    private TaskDto? _editTask;
+
+    private record FilterOption(string Key, string Label, int Count);
+
+    private List<FilterOption> _filters => new()
+    {
+        new("all",       "All",       _tasks.Count),
+        new("active",    "Active",    _tasks.Count(t => !t.IsCompleted)),
+        new("completed", "Completed", _tasks.Count(t => t.IsCompleted)),
+        new("high",      "High",      _tasks.Count(t => t.Priority == Priority.High)),
+    };
+
+    private List<TaskDto> FilteredTasks => _activeFilter switch
+    {
+        "active"    => _tasks.Where(t => !t.IsCompleted).ToList(),
+        "completed" => _tasks.Where(t => t.IsCompleted).ToList(),
+        "high"      => _tasks.Where(t => t.Priority == Priority.High).ToList(),
+        _           => _tasks
+    };
+
+    protected override async Task OnInitializedAsync() => await LoadTasks();
+
+    private async Task LoadTasks()
+    {
+        _loading = true;
+        _error = null;
+        try
+        {
+            _tasks = await Api.GetTasksAsync() ?? [];
+        }
+        catch (Exception ex)
+        {
+            _error = $"Could not load tasks: {ex.Message}";
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    private void OpenCreateForm()
+    {
+        _editTask = null;
+        _formOpen = true;
+    }
+
+    private void OpenEditForm(TaskDto task)
+    {
+        _editTask = task;
+        _formOpen = true;
+    }
+
+    private void CloseForm()
+    {
+        _formOpen = false;
+        _editTask = null;
+    }
+
+    private async Task SaveTask(TaskDto task)
+    {
+        try
+        {
+            if (task.Id == 0)
+            {
+                var created = await Api.CreateTaskAsync(task);
+                if (created is not null) _tasks.Insert(0, created);
+            }
+            else
+            {
+                var updated = await Api.UpdateTaskAsync(task.Id, task);
+                if (updated is not null)
+                {
+                    var idx = _tasks.FindIndex(t => t.Id == updated.Id);
+                    if (idx >= 0) _tasks[idx] = updated;
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            _error = $"Could not save task: {ex.Message}";
+        }
+        CloseForm();
+    }
+
+    private async Task ToggleComplete(TaskDto task)
+    {
+        var updated = new TaskDto
+        {
+            Id = task.Id,
+            Title = task.Title,
+            Description = task.Description,
+            DueDate = task.DueDate,
+            Priority = task.Priority,
+            IsCompleted = !task.IsCompleted,
+            CreatedAt = task.CreatedAt
+        };
+        try
+        {
+            var result = await Api.UpdateTaskAsync(task.Id, updated);
+            if (result is not null)
+            {
+                var idx = _tasks.FindIndex(t => t.Id == result.Id);
+                if (idx >= 0) _tasks[idx] = result;
+            }
+        }
+        catch (Exception ex)
+        {
+            _error = $"Could not update task: {ex.Message}";
+        }
+    }
+
+    private async Task DeleteTask(TaskDto task)
+    {
+        try
+        {
+            await Api.DeleteTaskAsync(task.Id);
+            _tasks.RemoveAll(t => t.Id == task.Id);
+        }
+        catch (Exception ex)
+        {
+            _error = $"Could not delete task: {ex.Message}";
+        }
+    }
+
+    private void SetFilter(string filter) => _activeFilter = filter;
+}
