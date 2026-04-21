@@ -19,6 +19,8 @@ public class TaskDto
     public string? Description { get; set; }
     public DateTime? DueDate { get; set; }
     public Priority Priority { get; set; } = Priority.Medium;
+    [RegularExpression(@"^([01]\d|2[0-3]):([0-5]\d)$", ErrorMessage = "Time must be in HH:MM format (e.g. 09:30)")]
+    public string? TaskTime { get; set; }
     public bool IsCompleted { get; set; }
     public DateTime CreatedAt { get; set; }
 }

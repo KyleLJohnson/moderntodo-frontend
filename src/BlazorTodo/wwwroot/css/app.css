@@ -111,6 +111,9 @@ main { min-height: 100vh; }
 .due-date svg { width: 12px; height: 12px; }
 .due-date.overdue { color: var(--danger); font-weight: 600; }
 
+.task-time { display: flex; align-items: center; gap: 4px; font-size: 0.8rem; color: var(--text-muted); }
+.task-time svg { width: 12px; height: 12px; }
+
 .task-card-actions { display: flex; gap: 4px; flex-shrink: 0; opacity: 0; transition: var(--transition); }
 .task-card:hover .task-card-actions { opacity: 1; }
 

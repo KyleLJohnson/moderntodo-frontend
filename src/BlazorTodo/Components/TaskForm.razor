@@ -34,14 +34,20 @@
                     <InputDate id="due" class="form-input" @bind-Value="_model.DueDate" />
                 </div>
                 <div class="form-group">
-                    <label for="priority">Priority</label>
-                    <InputSelect id="priority" class="form-input" @bind-Value="_model.Priority">
-                        @foreach (var p in Enum.GetValues<Priority>())
-                        {
-                            <option value="@p">@p</option>
-                        }
-                    </InputSelect>
+                    <label for="tasktime">Time</label>
+                    <InputText id="tasktime" type="time" class="form-input" @bind-Value="_model.TaskTime" />
+                    <ValidationMessage For="() => _model.TaskTime" />
                 </div>
+            </div>
+
+            <div class="form-group">
+                <label for="priority">Priority</label>
+                <InputSelect id="priority" class="form-input" @bind-Value="_model.Priority">
+                    @foreach (var p in Enum.GetValues<Priority>())
+                    {
+                        <option value="@p">@p</option>
+                    }
+                </InputSelect>
             </div>
 
             <div class="drawer-footer">
@@ -72,6 +78,7 @@
                 Title = EditTask.Title,
                 Description = EditTask.Description,
                 DueDate = EditTask.DueDate,
+                TaskTime = EditTask.TaskTime,
                 Priority = EditTask.Priority,
                 IsCompleted = EditTask.IsCompleted,
                 CreatedAt = EditTask.CreatedAt

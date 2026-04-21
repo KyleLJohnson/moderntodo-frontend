@@ -33,6 +33,16 @@
                     @Task.DueDate.Value.ToString("MMM d")
                 </span>
             }
+            @if (!string.IsNullOrWhiteSpace(Task.TaskTime))
+            {
+                <span class="task-time">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10" />
+                        <polyline points="12 6 12 12 16 14" />
+                    </svg>
+                    @Task.TaskTime
+                </span>
+            }
         </div>
     </div>
     <div class="task-card-actions">
